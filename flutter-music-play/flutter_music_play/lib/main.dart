@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_music_play/util/btdata.dart';
 import 'dart:io';
 import 'util/song.dart';
 
@@ -33,11 +34,16 @@ class MyHomePage extends StatefulWidget {
 
   final String title;
 
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String fillingstr='Empty';
+  String updownstr='Down';
+  String drinkstr='Not drinking';
+
   final List<Song> songs = [
     Song(name: "Song 1", path: "assets/sounds/Song1.mp3"),
     Song(name: "Song 2", path: "assets/sounds/Song2.mp3"),
@@ -60,7 +66,11 @@ class _MyHomePageState extends State<MyHomePage> {
               buildButton(1),
               buildButton(2),
               buildButton(3),
-              ElevatedButton(onPressed:() => onStop(), child: Text('Stop'))
+              ElevatedButton(onPressed:() => onStop(), child: Text('Stop')),
+              SizedBox(height: 15,),
+              ElevatedButton(onPressed: detectCurrentState, child: Text('Detect')),
+              SizedBox(height: 15,),
+              Text('Status: Filling:$fillingstr Up/Down: $updownstr, Drinking: $drinkstr')
             ],
           ),
         ),
@@ -92,4 +102,28 @@ class _MyHomePageState extends State<MyHomePage> {
     await player.playBytes(soundbytes);
       
     }  
+
+    void detectCurrentState() {
+      BluetoothData bluetoothData = new BluetoothData(incomingData: '1 1 1');
+      bluetoothData.parseIncomingData();
+
+
+      if(bluetoothData.filling) {
+        setState(() {
+          fillingstr='Not empty';
+        });  
+      }
+      if(bluetoothData.updown) {
+        setState(() {
+          updownstr='Up';
+        });
+      }
+      if(bluetoothData.drinkstate) {
+        setState(() {
+          drinkstr='Drinking';
+        });
+      }
+
+
+    }
 }
