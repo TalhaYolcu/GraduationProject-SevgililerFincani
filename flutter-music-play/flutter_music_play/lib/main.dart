@@ -7,8 +7,52 @@ import 'package:flutter/services.dart';
 import 'package:flutter_music_play/util/btdata.dart';
 import 'dart:io';
 import 'util/song.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() {
+
+//notificationchannel
+const AndroidNotificationChannel channel=AndroidNotificationChannel(
+  'high_importance_channel', //id
+  'High Importance Notifications', //title
+  description: 'This channel is used for important notifications.',
+  importance: Importance.high,
+  playSound: true);
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin=FlutterLocalNotificationsPlugin(
+
+);
+
+//initialize firebase when notification is received in background
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('A bg message just showed up : ${message.messageId}');
+}
+
+
+
+Future<void> main() async {
+  
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  //init firebase
+  await Firebase.initializeApp();
+
+  //handle in background
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  await flutterLocalNotificationsPlugin
+    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+    ?.createNotificationChannel(channel);
+
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true
+  );
+
   runApp(const MyApp());
 }
 
@@ -35,6 +79,8 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
 
+  
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -43,6 +89,54 @@ class _MyHomePageState extends State<MyHomePage> {
   String fillingstr='Empty';
   String updownstr='Down';
   String drinkstr='Not drinking';
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? androidNotification=message.notification?.android;
+      if(notification!=null && androidNotification!=null) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              channel.id,
+              channel.name,
+              channelDescription: channel.description,
+              color: Colors.blue,
+              playSound: true,
+              icon: '@mipmap/ic_launcher'
+            )
+          )
+        );
+      }
+     });
+     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) { 
+      print('A new onMessageOpenedApp event was published');
+      RemoteNotification? notification=message.notification;
+      AndroidNotification? androidNotification=message.notification?.android;
+      if(notification!=null && androidNotification!=null) {
+        showDialog(context: context,
+          builder: (_) {
+          return AlertDialog(
+            title: Text(notification.title??'Null'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                Text(notification.body??'Null')
+              ]),
+            ),
+
+          );
+        });
+      }
+     });
+  }
 
   final List<Song> songs = [
     Song(name: "Song 1", path: "assets/sounds/Song1.mp3"),
@@ -101,29 +195,41 @@ class _MyHomePageState extends State<MyHomePage> {
   
     await player.playBytes(soundbytes);
       
-    }  
+  }  
 
-    void detectCurrentState() {
-      BluetoothData bluetoothData = new BluetoothData(incomingData: '1 1 1');
-      bluetoothData.parseIncomingData();
-
-
-      if(bluetoothData.filling) {
-        setState(() {
-          fillingstr='Not empty';
-        });  
-      }
-      if(bluetoothData.updown) {
-        setState(() {
-          updownstr='Up';
-        });
-      }
-      if(bluetoothData.drinkstate) {
-        setState(() {
-          drinkstr='Drinking';
-        });
-      }
+  void detectCurrentState() {
+    BluetoothData bluetoothData = new BluetoothData(incomingData: '0 1 1');
+    bluetoothData.parseIncomingData();
 
 
+    if(bluetoothData.filling) {
+      setState(() {
+        fillingstr='Not empty';
+      });  
     }
+    if(bluetoothData.updown) {
+      setState(() {
+        updownstr='Up';
+      });
+    }
+    if(bluetoothData.drinkstate) {
+      setState(() {
+        drinkstr='Drinking';
+      });
+    }
+
+    flutterLocalNotificationsPlugin.show(0, 'Testing $fillingstr', "How you doin", NotificationDetails(
+      android: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        importance: Importance.high,
+        color: Colors.blue,
+        playSound: true,
+        icon: '@mipmap/ic_launcher' 
+      )
+    ));
+
+
+  }
 }
