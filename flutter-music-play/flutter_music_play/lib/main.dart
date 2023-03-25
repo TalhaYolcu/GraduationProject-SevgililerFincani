@@ -148,6 +148,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
 
+    FirebaseMessaging.instance.getToken().then((value) {
+      print("Firebase token is: ");
+      print(value);
+    });
+
     return Scaffold(
       appBar: AppBar(
           title: Text("Song Player"),
