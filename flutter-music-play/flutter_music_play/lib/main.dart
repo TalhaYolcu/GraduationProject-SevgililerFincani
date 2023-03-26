@@ -1,7 +1,10 @@
 
+import 'dart:ffi';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_music_play/util/btdata.dart';
@@ -23,6 +26,7 @@ const AndroidNotificationChannel channel=AndroidNotificationChannel(
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin=FlutterLocalNotificationsPlugin(
 
 );
+
 
 //initialize firebase when notification is received in background
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -89,11 +93,26 @@ class _MyHomePageState extends State<MyHomePage> {
   String fillingstr='Empty';
   String updownstr='Down';
   String drinkstr='Not drinking';
+  String roomText="";
+    final FirebaseDatabase referencedatabase = FirebaseDatabase.instance;
+  
+  
+  
+
+
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    roomtextController.dispose();
+  }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? androidNotification=message.notification?.android;
@@ -144,15 +163,50 @@ class _MyHomePageState extends State<MyHomePage> {
     Song(name: "Song 3", path: "assets/sounds/Song3.mp3"),
     Song(name: "Kumralim", path: "assets/sounds/Kumralim.mp3")
   ];
+
+  TextEditingController roomtextController = TextEditingController();
     final player = AudioPlayer();
   @override
   Widget build(BuildContext context) {
 
-    FirebaseMessaging.instance.getToken().then((value) {
+    /*FirebaseMessaging.instance.getToken().then((value) {
       print("Firebase token is: ");
       print(value);
-    });
+    });*/
+    return Scaffold(appBar: AppBar(
+          title: Text("Sevgililer Fincanı"),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              mainAxisAlignment:MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 75,),
+                Image(image: AssetImage('assets/images/mugs.png'),width: 120,height: 120,),
+                SizedBox(height: 50,),
+                TextField(
+                    controller: roomtextController,
+                    decoration: InputDecoration(hintText: "Please enter a room number to join/create")
+                ),
+                SizedBox(height: 5,),
+                ElevatedButton(
+                  onPressed: roomEntered,
+                  child: Text('OK')),
+                
 
+                //SizedBox(width: 5,),
+                /*ElevatedButton(
+                  onPressed: roomEntered,
+                    child: Text( "OK")
+                )*/
+              ],
+             ),
+          )
+        ),
+    );
+    /*
     return Scaffold(
       appBar: AppBar(
           title: Text("Song Player"),
@@ -173,8 +227,60 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
-    );
+    );*/
   }
+
+  void roomEntered() {
+    setState(() {
+      roomText=roomtextController.text;
+    });
+    searchforRooms();
+  }
+  String _generatePassword() {
+    // Generate a random 6-digit numeric password
+    final random = Random();
+    return random.nextInt(999999).toString().padLeft(6, '0');
+  }  
+  void searchforRooms() async {
+    print(roomText);
+    try {
+      final roomRef=FirebaseDatabase.instanceFor(app: Firebase.app(),
+      databaseURL: "https://flutter-fcm-6946b-default-rtdb.europe-west1.firebasedatabase.app").ref('rooms').child(roomText);
+          print("zaa");
+      final snapshot = await roomRef.once();
+          print("zaa3");
+      final roomExists = snapshot.snapshot.value!=null;
+          print("zaa2");
+      if(roomExists) {
+        print('Room Exists');
+      }  
+      else {
+        print('Room does not exists');
+        // Room does not exist, create a new room and generate a password
+        final password = _generatePassword();
+        await roomRef.set({
+          'password': password,
+          'createdAt': DateTime.now().toUtc().toString(),
+          'isLocked': false,
+          'users': {
+            // Add the first user who created the room
+            'user1': {
+              'name': 'User 1',
+              'joinedAt': DateTime.now().toUtc().toString(),
+            },
+          },
+        });               
+      }         
+    }
+    catch(ex) {
+      print('EXX');
+      print(ex);
+    }
+
+       
+   
+  }
+
   Widget buildButton(int index) {
     return Padding(
       padding: EdgeInsets.all(10.0),
