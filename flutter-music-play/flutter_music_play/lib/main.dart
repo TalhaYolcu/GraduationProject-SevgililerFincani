@@ -7,13 +7,15 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_music_play/screens.dart/insideroomscreen.dart';
+import 'package:flutter_music_play/screens.dart/joinroomscreen.dart';
 import 'package:flutter_music_play/util/btdata.dart';
 import 'dart:io';
 import 'util/song.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'util/constants.dart';
 
 //notificationchannel
 const AndroidNotificationChannel channel=AndroidNotificationChannel(
@@ -94,7 +96,8 @@ class _MyHomePageState extends State<MyHomePage> {
   String updownstr='Down';
   String drinkstr='Not drinking';
   String roomText="";
-    final FirebaseDatabase referencedatabase = FirebaseDatabase.instance;
+  final FirebaseDatabase referencedatabase = FirebaseDatabase.instanceFor(
+    app: Firebase.app(),databaseURL: firebaseDatabaseUrl);
   
   
   
@@ -244,15 +247,12 @@ class _MyHomePageState extends State<MyHomePage> {
   void searchforRooms() async {
     print(roomText);
     try {
-      final roomRef=FirebaseDatabase.instanceFor(app: Firebase.app(),
-      databaseURL: "https://flutter-fcm-6946b-default-rtdb.europe-west1.firebasedatabase.app").ref('rooms').child(roomText);
-          print("zaa");
+      final roomRef= referencedatabase.ref('rooms').child(roomText);
       final snapshot = await roomRef.once();
-          print("zaa3");
       final roomExists = snapshot.snapshot.value!=null;
-          print("zaa2");
       if(roomExists) {
         print('Room Exists');
+        Navigator.push(context, MaterialPageRoute(builder: (context) => JoinRoomPasswordScreen(roomName: roomText)));
       }  
       else {
         print('Room does not exists');
@@ -269,7 +269,9 @@ class _MyHomePageState extends State<MyHomePage> {
               'joinedAt': DateTime.now().toUtc().toString(),
             },
           },
-        });               
+        });   
+        Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomText, userId: 'user1')));
+            
       }         
     }
     catch(ex) {
