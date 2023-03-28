@@ -96,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String updownstr='Down';
   String drinkstr='Not drinking';
   String roomText="";
+  String userIdText="";
   final FirebaseDatabase referencedatabase = FirebaseDatabase.instanceFor(
     app: Firebase.app(),databaseURL: firebaseDatabaseUrl);
   
@@ -109,6 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: implement dispose
     super.dispose();
     roomtextController.dispose();
+    userIdController.dispose();
   }
 
   @override
@@ -168,7 +170,9 @@ class _MyHomePageState extends State<MyHomePage> {
   ];
 
   TextEditingController roomtextController = TextEditingController();
-    final player = AudioPlayer();
+  TextEditingController userIdController = TextEditingController();
+
+  final player = AudioPlayer();
   @override
   Widget build(BuildContext context) {
 
@@ -179,33 +183,35 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(appBar: AppBar(
           title: Text("Sevgililer Fincanı"),
         ),
-        body: Center(
+        body: Container(
           child: Padding(
             padding: const EdgeInsets.all(15.0),
-            child: Column(
-              mainAxisAlignment:MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 75,),
-                Image(image: AssetImage('assets/images/mugs.png'),width: 120,height: 120,),
-                SizedBox(height: 50,),
-                TextField(
-                    controller: roomtextController,
-                    decoration: InputDecoration(hintText: "Please enter a room number to join/create")
-                ),
-                SizedBox(height: 5,),
-                ElevatedButton(
-                  onPressed: roomEntered,
-                  child: Text('OK')),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment:MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: 75,),
+                  Image(image: AssetImage('assets/images/mugs.png'),width: 120,height: 120,),
+                  SizedBox(height: 50,),
+                  TextField(
+                      controller: userIdController,
+                      decoration: InputDecoration(labelText: "Username")
+                  ),                 
+                  SizedBox(height: 5,),
+                   TextField(
+                      controller: roomtextController,
+                      decoration: InputDecoration(labelText: "A room number to join/create")
+                  ),
+                  SizedBox(height: 10,),              
+                  ElevatedButton(
+                    onPressed: roomEntered,
+                    child: Text('Create/Join Room')
+                  ),
                 
-
-                //SizedBox(width: 5,),
-                /*ElevatedButton(
-                  onPressed: roomEntered,
-                    child: Text( "OK")
-                )*/
-              ],
-             ),
+                ],
+               ),
+            ),
           )
         ),
     );
@@ -236,6 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void roomEntered() {
     setState(() {
       roomText=roomtextController.text;
+      userIdText=userIdController.text;
     });
     searchforRooms();
   }
@@ -245,14 +252,35 @@ class _MyHomePageState extends State<MyHomePage> {
     return random.nextInt(999999).toString().padLeft(6, '0');
   }  
   void searchforRooms() async {
-    print(roomText);
+    print("Room name:"+roomText);
+    print("User Id:"+userIdText);
+
     try {
       final roomRef= referencedatabase.ref('rooms').child(roomText);
       final snapshot = await roomRef.once();
       final roomExists = snapshot.snapshot.value!=null;
       if(roomExists) {
         print('Room Exists');
-        Navigator.push(context, MaterialPageRoute(builder: (context) => JoinRoomPasswordScreen(roomName: roomText)));
+
+        //check room is locked or not
+
+        final snapshot = await roomRef.once();
+        final roomData = snapshot.snapshot.value as Map<dynamic, dynamic>;
+        if(roomData['isLocked']) {
+          print('Room is locked');
+          // Room is locked, show an error message and return to the previous screen
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('This room is full'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        else {
+          print('Joining to the room ${roomText}');
+          Navigator.push(context, MaterialPageRoute(builder: (context) => JoinRoomPasswordScreen(roomName: roomText,userId:userIdText)));
+
+        }
       }  
       else {
         print('Room does not exists');
@@ -264,13 +292,13 @@ class _MyHomePageState extends State<MyHomePage> {
           'isLocked': false,
           'users': {
             // Add the first user who created the room
-            'user1': {
-              'name': 'User 1',
+            '${userIdText}': {
+              'name': '${userIdText}',
               'joinedAt': DateTime.now().toUtc().toString(),
             },
           },
         });   
-        Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomText, userId: 'user1')));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomText, userId: userIdText)));
             
       }         
     }

@@ -32,56 +32,30 @@ class _RoomScreenState extends State<RoomScreen> {
   @override
   void initState() {
     super.initState();
-            sleep(Duration(seconds:2));
 
     try {
       roomRef = referencedatabase.ref('rooms').child(widget.roomName);
 
 
-    // Listen for changes to the room data
+      // Listen for changes to the room data
       roomSubscription = roomRef.onValue.listen((event) async {
         final roomData = event.snapshot.value as Map<dynamic, dynamic>;
         print("Room data has been converted to map");
-        if (roomData['isLocked']) {
-          // Room is locked, show an error message and return to the previous screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('This room is full'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-          Navigator.pop(context);
-        }
-        else {
-          DatabaseReference usersRef=roomRef.child('users').child('user2');
-          final snapshot = await usersRef.once();
-          final user2Exists = snapshot.snapshot.value!=null;
-          if(user2Exists) {
-            final usersData = roomData['users'] as Map<dynamic, dynamic>;
-            print("Users data has been taken as map");
-            final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
-            print("Users list created");
 
-            if (users.length < 2) {
-              // Room is not full yet, add the current user to the room
-              roomRef.child('users').child(widget.userId).set({
-                'name': 'User ${users.length + 1}',
-                'joinedAt': DateTime.now().toUtc().toString(),
-              });
-            } else {
-              // Room is full, lock the room
-              roomRef.update({'isLocked': true});
-            }
-          }
 
+        final usersData = roomData['users'] as Map<dynamic,dynamic>;
+        final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
+
+        if (users.length==2) {
+          // Room is full, lock the room
+          roomRef.update({'isLocked': true});
         }
+      
       });
     }
     catch(ex) {
       print(ex);
     }
-
-
   }
 
   @override
@@ -103,28 +77,37 @@ class _RoomScreenState extends State<RoomScreen> {
           if (snapshot.hasData) {
             
             final usersData = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
-            print('usersData.entries: ${usersData.entries}');
 
-            /*final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value as Map<String, dynamic>)).toList();
+            final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
 
             if (users.isEmpty) {
               // Room is empty, remove the room
               roomRef.remove();
               Navigator.pop(context);
               return SizedBox.shrink();
-            } else {
-              return ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(users[index].name),
-                    subtitle: Text(users[index].joinedAt.toString()),
-                  );
-                },
-              );
             }
-            */
-            return SizedBox(height: 5,);
+            else {
+              return Column(
+                children: [
+                  SizedBox(height: 16),
+                  Text('You are ${widget.userId}'), // display the current user's ID
+                  SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                    itemCount: users.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(users[index].name),
+                        subtitle: Text(users[index].joinedAt.toString()),
+                      );
+                    },
+                  ) 
+                  ),
+                ],
+              ) ;
+            }
+            
+            //return SizedBox(height: 5,);
           } else {
             return Center(
               child: CircularProgressIndicator(),
