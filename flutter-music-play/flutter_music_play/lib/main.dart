@@ -295,6 +295,9 @@ class _MyHomePageState extends State<MyHomePage> {
             '${userIdText}': {
               'name': '${userIdText}',
               'joinedAt': DateTime.now().toUtc().toString(),
+              'Filling':'No',
+              'Cup is up':'No',
+              'Drinking':'No'
             },
           },
         });   

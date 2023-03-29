@@ -61,8 +61,19 @@ class _JoinRoomPasswordScreenState extends State<JoinRoomPasswordScreen> {
         
                     final user2Exists = snapshot.snapshot.value!=null;
                     if(!user2Exists)  {
-                      final user2 = RoomUser(name: '${widget.userId}', joinedAt: DateTime.now());
-                      await roomRef.child('users').child('${widget.userId}').set(user2.toMap());
+                      final user2 = RoomUser(name: '${widget.userId}', joinedAt: DateTime.now(),cup_is_up: "No",drinking: "No",filling: "No");
+                      await roomRef.child('users').child('${widget.userId}').set({
+                          //user2.toMap()
+                          'name': widget.userId,
+                          'joinedAt': DateTime.now().toUtc().toString(),
+                          'Filling':'No',
+                          'Cup is up':'No',
+                          'Drinking':'No'
+                      }
+
+
+
+                        );
                     }
         
                     Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}')));

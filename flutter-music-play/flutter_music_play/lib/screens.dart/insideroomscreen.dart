@@ -89,6 +89,15 @@ class _RoomScreenState extends State<RoomScreen> {
             else {
               return Column(
                 children: [
+                  SizedBox(height: 20,),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      ElevatedButton(onPressed: onFillingStateChanged, child: Text('Change Fillng State')),
+                      ElevatedButton(onPressed: onCupIsUpStateChanged, child: Text('Change Cup is Up State')),                    
+                      ElevatedButton(onPressed: onDrinkStateChanged, child: Text('Change Drink State')),
+                    ],
+                  ),                  
                   SizedBox(height: 16),
                   Text('You are ${widget.userId}'), // display the current user's ID
                   SizedBox(height: 16),
@@ -98,11 +107,25 @@ class _RoomScreenState extends State<RoomScreen> {
                     itemBuilder: (context, index) {
                       return ListTile(
                         title: Text(users[index].name),
-                        subtitle: Text(users[index].joinedAt.toString()),
+                        subtitle: Column(
+                          children: [
+                            Text("Joined at:"+users[index].joinedAt.toString()),
+                            SizedBox(height: 3,),
+                            Text("Filling:"+users[index].filling.toString()),
+                            SizedBox(height: 3,),
+                            Text("Cup is up:"+users[index].cup_is_up.toString()),
+                            SizedBox(height: 3,),
+                            Text("Drinking:"+users[index].drinking.toString()),
+                            SizedBox(height: 3,),
+
+                          ],
+                        ),
+                        
                       );
                     },
                   ) 
                   ),
+
                 ],
               ) ;
             }
@@ -116,5 +139,40 @@ class _RoomScreenState extends State<RoomScreen> {
         },
       ),
     );
+  }
+  void onDrinkStateChanged() async {
+    try {
+      var DrinkRef=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Drinking");
+      final snapshot = await DrinkRef.once();
+      String newValue = snapshot.snapshot.value.toString()=="No" ? "Yes" : "No";
+      DrinkRef.set(newValue);
+    }
+    catch(ex) {
+      print(ex);
+    }
+  }
+  void onFillingStateChanged() async {
+    try {
+      var FilingRef=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Filling");
+      final snapshot = await FilingRef.once();
+      String newValue = snapshot.snapshot.value.toString()=="No" ? "Yes" : "No";
+      FilingRef.set(newValue);
+    }
+    catch(ex) {
+      print(ex);
+    }
+
+  }
+  void onCupIsUpStateChanged() async {
+    try {
+      var CupIsUp=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Cup is up");
+      final snapshot = await CupIsUp.once();
+      String newValue = snapshot.snapshot.value.toString()=="No" ? "Yes" : "No";
+      CupIsUp.set(newValue);
+    }
+    catch(ex) {
+      print(ex);
+    }    
+
   }
 }
