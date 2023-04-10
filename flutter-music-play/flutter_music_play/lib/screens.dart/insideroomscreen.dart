@@ -5,8 +5,6 @@ import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter/material.dart';
 import '../util/constants.dart';
 import '../util/model/roomuser.dart';
@@ -93,14 +91,14 @@ class _RoomScreenState extends State<RoomScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      ElevatedButton(onPressed: onFillingStateChanged, child: Text('Change Fillng State')),
-                      ElevatedButton(onPressed: onCupIsUpStateChanged, child: Text('Change Cup is Up State')),                    
-                      ElevatedButton(onPressed: onDrinkStateChanged, child: Text('Change Drink State')),
+                      ElevatedButton(onPressed: onFillingStateChanged, child: const Text('Change Fillng State')),
+                      ElevatedButton(onPressed: onCupIsUpStateChanged, child: const Text('Change Cup is Up State')),                    
+                      ElevatedButton(onPressed: onDrinkStateChanged, child: const Text('Change Drink State')),
                     ],
                   ),                  
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text('You are ${widget.userId}'), // display the current user's ID
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Expanded(
                     child: ListView.builder(
                     itemCount: users.length,
@@ -109,14 +107,14 @@ class _RoomScreenState extends State<RoomScreen> {
                         title: Text(users[index].name),
                         subtitle: Column(
                           children: [
-                            Text("Joined at:"+users[index].joinedAt.toString()),
-                            SizedBox(height: 3,),
-                            Text("Filling:"+users[index].filling.toString()),
-                            SizedBox(height: 3,),
-                            Text("Cup is up:"+users[index].cup_is_up.toString()),
-                            SizedBox(height: 3,),
-                            Text("Drinking:"+users[index].drinking.toString()),
-                            SizedBox(height: 3,),
+                            Text("Joined at:${users[index].joinedAt}"),
+                            const SizedBox(height: 3,),
+                            Text("Filling:${users[index].filling}"),
+                            const SizedBox(height: 3,),
+                            Text("Cup is up:${users[index].cup_is_up}"),
+                            const SizedBox(height: 3,),
+                            Text("Drinking:${users[index].drinking}"),
+                            const SizedBox(height: 3,),
 
                           ],
                         ),
@@ -132,7 +130,7 @@ class _RoomScreenState extends State<RoomScreen> {
             
             //return SizedBox(height: 5,);
           } else {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(),
             );
           }
