@@ -7,8 +7,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_music_play/screens.dart/insideroomscreen.dart';
-import 'package:flutter_music_play/screens.dart/joinroomscreen.dart';
+import 'package:flutter_music_play/screens/ble_scan_screen.dart';
+import 'package:flutter_music_play/screens/insideroomscreen.dart';
+import 'package:flutter_music_play/screens/joinroomscreen.dart';
 import 'package:flutter_music_play/util/btdata.dart';
 import 'dart:io';
 import 'util/song.dart';
@@ -208,6 +209,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: roomEntered,
                     child: Text('Create/Join Room')
                   ),
+                  SizedBox(height: 20,),
+                  ElevatedButton(
+                    onPressed: _scanBLEScreen,
+                    child: Text('Scan BLE')
+                  ),                  
                 
                 ],
                ),
@@ -375,5 +381,8 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
 
 
+  }
+  void _scanBLEScreen() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => BTScanScreen()) );
   }
 }
