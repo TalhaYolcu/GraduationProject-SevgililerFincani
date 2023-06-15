@@ -1,8 +1,12 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_music_play/screens/insideroomscreen.dart';
+import '../main.dart';
 import '../util/constants.dart';
 import '../util/model/roomuser.dart';
 
@@ -22,8 +26,57 @@ class _JoinRoomPasswordScreenState extends State<JoinRoomPasswordScreen> {
   FirebaseDatabase referencedatabase=FirebaseDatabase.instanceFor(
     app: Firebase.app(),databaseURL: firebaseDatabaseUrl);
 
+  String pushToken = "";
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? androidNotification = message.notification?.android;
+      if (notification != null && androidNotification != null) {
+        flutterLocalNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+                android: AndroidNotificationDetails(channel.id, channel.name,
+                    channelDescription: channel.description,
+                    color: Colors.blue,
+                    playSound: true,
+                    icon: '@mipmap/ic_launcher')));
+      }
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      Logger.log(Logger.logLevel,'A new onMessageOpenedApp event was published');
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? androidNotification = message.notification?.android;
+      if (notification != null && androidNotification != null) {
+        showDialog(
+            context: context,
+            builder: (_) {
+              return AlertDialog(
+                title: Text(notification.title ?? 'Null'),
+                content: SingleChildScrollView(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Text(notification.body ?? 'Null')]),
+                ),
+              );
+            });
+      }
+    });     
+  }
+
   @override
   Widget build(BuildContext context) {
+    FirebaseMessaging.instance.getToken().then((value) {
+      print("Firebase token is: ");
+      print(value);
+      pushToken=value!;
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Enter Room Password'),
@@ -70,12 +123,10 @@ class _JoinRoomPasswordScreenState extends State<JoinRoomPasswordScreen> {
                           'joinedAt': DateTime.now().toUtc().toString(),
                           'Filling':'No',
                           'Cup is up':'No',
-                          'Drinking':'No'
+                          'Drinking':'No',
+                          'token' : pushToken,
                       }
-
-
-
-                        );
+                      );
                     }
         
                     Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}',server: widget.server,)));

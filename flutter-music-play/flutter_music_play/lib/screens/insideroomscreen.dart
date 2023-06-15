@@ -13,6 +13,7 @@ import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import '../util/constants.dart';
 import '../util/model/roomuser.dart';
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 
 class MyScreenObserver extends WidgetsBindingObserver {
   @override
@@ -374,7 +375,7 @@ class _RoomScreenState extends State<RoomScreen> {
         content:  SafeArea(
           child: Row(
             children: [
-              Text('Room Pasword is : $roomPassword',style: const TextStyle(fontSize: 15),),
+              Text('Room Password is : $roomPassword',style: const TextStyle(fontSize: 15),),
               IconButton(icon: const Icon(Icons.copy),onPressed:() {
                 Clipboard.setData(ClipboardData(text:roomPassword));
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -415,23 +416,16 @@ class _RoomScreenState extends State<RoomScreen> {
     print("Message has been send");
 
   }
-  void makeFillingStateOn() async {
-    try {
-      var FilingRef=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Filling");
-      final snapshot = await FilingRef.once();
-      String newValue = "Yes";
-      FilingRef.set(newValue);
-    }
-    catch(ex) {
-      print(ex);
-    }
-  }
   void makeCupIsUpStateOn() async {
     try {
       var CupIsUp=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Cup is up");
       final snapshot = await CupIsUp.once();
       String newValue = "Yes";
       CupIsUp.set(newValue);
+
+      //send notification here
+      sendNotification();
+
     }
     catch(ex) {
       print(ex);
@@ -447,17 +441,55 @@ class _RoomScreenState extends State<RoomScreen> {
     catch(ex) {
       print(ex);
     } 
-  }  
-  void onCupIsUpStateChanged() async {
+  } 
+  void sendNotification() async {
+    String oppositeName = "";
+    String oppositeToken = "";
     try {
-      var CupIsUp=referencedatabase.ref('rooms').child(widget.roomName).child("users").child(widget.userId).child("Cup is up");
-      final snapshot = await CupIsUp.once();
-      String newValue = snapshot.snapshot.value.toString()=="No" ? "Yes" : "No";
-      CupIsUp.set(newValue);
+      var usersRef = referencedatabase.ref('rooms').child(widget.roomName).child('users');
+
+      final snapshot = await usersRef.once();
+      if(snapshot!=null) {
+        Map<dynamic,dynamic>? usersData = snapshot.snapshot.value as Map<dynamic, dynamic>?;
+        usersData?.forEach((key, value) {
+          if(value['name']!=widget.userId) {
+            oppositeName = value['name'];
+            oppositeToken = value['token'];
+            
+          }
+        });
+      }
+      if(oppositeToken.isNotEmpty && oppositeName.isNotEmpty) {
+          var url = Uri.parse(firebaseApiUrl); // Replace with your API endpoint
+          var body = json.encode({
+            "to" : oppositeToken,
+            "notification" : {
+              "body" : "Body",
+              "title" : "title",
+              "subtitle" : "subtitle"        
+            }
+          });
+          var header = {
+            "Content-Type" : "application/json",
+            "Authorization" : fcmServerKey
+          };
+          var response = await http.post(url, body: body,headers:header);
+
+          if (response.statusCode == 200) {
+            // Request was successful
+            var responseBody = response.body;
+            // Process the response data here
+            print(responseBody);
+          } else {
+            // Request failed
+            print('Request failed with status: ${response.statusCode}');
+          }        
+      }
     }
     catch(ex) {
-      print(ex);
-    }    
+      print(ex.toString());
+    }
+
 
   }
 }

@@ -35,6 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String drinkstr = 'Not drinking';
   String roomText = "";
   String userIdText = "";
+  String pushToken = "";
   //final service = FlutterBackgroundService();
 
   final List<Song> songs = [
@@ -104,6 +105,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+
+    FirebaseMessaging.instance.getToken().then((value) {
+      print("Firebase token is: ");
+      print(value);
+      pushToken=value!;
+    });
+
 
     return Scaffold(
       appBar: AppBar(
@@ -240,7 +248,8 @@ class _MyHomePageState extends State<MyHomePage> {
               'joinedAt': DateTime.now().toUtc().toString(),
               'Filling': 'No',
               'Cup is up': 'No',
-              'Drinking': 'No'
+              'Drinking': 'No',
+              'token' : pushToken,
             },
           },
         });
