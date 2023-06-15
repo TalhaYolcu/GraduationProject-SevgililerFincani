@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 import '../util/model/BluetoothDeviceListEntry.dart';
+import 'homepage.dart';
 
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
@@ -104,23 +105,35 @@ class _DiscoveryPage extends State<DiscoveryPage> {
           return BluetoothDeviceListEntry(
             device: device,
             rssi: result.rssi,
-            onTap: () {
+            /*onTap: () {
               Navigator.of(context).pop(result.device);
-            },
-            onLongPress: () async {
+            },*/
+            onTap: () async {
               try {
                 bool bonded = false;
+                bool continueChat = false;
                 if (device.isBonded) {
                   print('Unbonding from ${device.address}...');
                   await FlutterBluetoothSerial.instance
                       .removeDeviceBondWithAddress(address);
                   print('Unbonding from ${device.address} has succed');
-                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Unbond successful')),
+                  );  
+                }
+                else {
                   print('Bonding with ${device.address}...');
                   bonded = (await FlutterBluetoothSerial.instance
                       .bondDeviceAtAddress(address))!;
                   print(
                       'Bonding with ${device.address} has ${bonded ? 'succed' : 'failed'}.');
+                  if(bonded) {
+                    continueChat=true;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Bond successful')),
+                    );   
+                  }
+                    
                 }
                 setState(() {
                   results[results.indexOf(result)] = BluetoothDiscoveryResult(
@@ -134,6 +147,10 @@ class _DiscoveryPage extends State<DiscoveryPage> {
                       ),
                       rssi: result.rssi);
                 });
+                if(continueChat) {
+                  _startChat(context, device);
+                }
+                
               } catch (ex) {
                 showDialog(
                   context: context,
@@ -155,6 +172,16 @@ class _DiscoveryPage extends State<DiscoveryPage> {
               }
             },
           );
+        },
+      ),
+    );
+  }
+    void _startChat(BuildContext context, BluetoothDevice server) {
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return MyHomePage(server: server);
         },
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_music_play/screens/insideroomscreen.dart';
 import '../util/constants.dart';
 import '../util/model/roomuser.dart';
@@ -8,8 +9,9 @@ import '../util/model/roomuser.dart';
 class JoinRoomPasswordScreen extends StatefulWidget {
   final String roomName;
   final String userId;
+  BluetoothDevice server;
 
-  JoinRoomPasswordScreen({required this.roomName,required this.userId});
+  JoinRoomPasswordScreen({required this.roomName,required this.userId,required this.server});
 
   @override
   _JoinRoomPasswordScreenState createState() => _JoinRoomPasswordScreenState();
@@ -76,7 +78,7 @@ class _JoinRoomPasswordScreenState extends State<JoinRoomPasswordScreen> {
                         );
                     }
         
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}')));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}',server: widget.server,)));
         
                   } else {
                     // Password is incorrect, show an error message

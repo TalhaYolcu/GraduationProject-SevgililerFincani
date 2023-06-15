@@ -4,5 +4,5 @@ class Song {
   String name;
   String path;
 
-  Song({required this.name,required this.path});
+  Song({required this.name, required this.path});
 }
