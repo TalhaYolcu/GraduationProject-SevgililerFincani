@@ -14,8 +14,10 @@ class JoinRoomPasswordScreen extends StatefulWidget {
   final String roomName;
   final String userId;
   BluetoothDevice server;
+  String song_path;
+  String duration_value;
 
-  JoinRoomPasswordScreen({required this.roomName,required this.userId,required this.server});
+  JoinRoomPasswordScreen({required this.roomName,required this.userId,required this.server,required this.song_path,required this.duration_value});
 
   @override
   _JoinRoomPasswordScreenState createState() => _JoinRoomPasswordScreenState();
@@ -129,7 +131,7 @@ class _JoinRoomPasswordScreenState extends State<JoinRoomPasswordScreen> {
                       );
                     }
         
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}',server: widget.server,)));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => RoomScreen(roomName: roomName, userId: '${widget.userId}',server: widget.server,song_path: widget.song_path,duration_value: widget.duration_value,)));
         
                   } else {
                     // Password is incorrect, show an error message

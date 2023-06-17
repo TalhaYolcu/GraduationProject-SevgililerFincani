@@ -8,6 +8,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -22,8 +23,10 @@ import 'joinroomscreen.dart';
 
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.server});
+  MyHomePage({super.key, required this.server,required this.song_path,required this.duration_value});
   final BluetoothDevice server;
+  String song_path;
+  String duration_value;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -37,13 +40,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String userIdText = "";
   String pushToken = "";
   //final service = FlutterBackgroundService();
-
-  final List<Song> songs = [
-    Song(name: "Song 1", path: "assets/sounds/Song1.mp3"),
-    Song(name: "Song 2", path: "assets/sounds/Song2.mp3"),
-    Song(name: "Song 3", path: "assets/sounds/Song3.mp3"),
-    Song(name: "Kumralim", path: "assets/sounds/Kumralim.mp3")
-  ];
 
   TextEditingController roomtextController = TextEditingController();
   TextEditingController userIdController = TextEditingController();
@@ -160,28 +156,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
-    /*
-    return Scaffold(
-      appBar: AppBar(
-          title: Text("Song Player"),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              buildButton(0),
-              buildButton(1),
-              buildButton(2),
-              buildButton(3),
-              ElevatedButton(onPressed:() => onStop(), child: Text('Stop')),
-              SizedBox(height: 15,),
-              ElevatedButton(onPressed: detectCurrentState, child: Text('Detect')),
-              SizedBox(height: 15,),
-              Text('Status: Filling:$fillingstr Up/Down: $updownstr, Drinking: $drinkstr')
-            ],
-          ),
-        ),
-    );*/
   }
 
   void roomEntered() {
@@ -231,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
               context,
               MaterialPageRoute(
                   builder: (context) => JoinRoomPasswordScreen(
-                      roomName: roomText, userId: userIdText,server:widget.server)));
+                      roomName: roomText, userId: userIdText,server:widget.server,song_path:widget.song_path,duration_value:widget.duration_value)));
         }
       } else {
         Logger.log(Logger.logLevel,'Room does not exists');
@@ -257,72 +231,11 @@ class _MyHomePageState extends State<MyHomePage> {
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                    RoomScreen(roomName: roomText, userId: userIdText,server:widget.server)));
+                    RoomScreen(roomName: roomText, userId: userIdText,server:widget.server,song_path:widget.song_path,duration_value:widget.duration_value)));
       }
     } catch (ex) {
       Logger.log(Logger.logLevel,'EXX');
       Logger.error(ex.toString());
     }
-  }
-
-
-
-  Widget buildButton(int index) {
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: ElevatedButton(
-        onPressed: () => playSong(songs[index].path),
-        child: Text(songs[index].name),
-      ),
-    );
-  }
-
-  void onStop() async {
-    await player.pause();
-  }
-
-  void playSong(String path) async {
-    /*if (!File(path).existsSync()) {
-      print("Path does exists\n");
-      return;
-    }*/
-    ByteData bytes = await rootBundle.load(path);
-    Uint8List soundbytes =
-        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
-
-    await player.playBytes(soundbytes);
-  }
-
-  void detectCurrentState() {
-    BluetoothData bluetoothData = BluetoothData(incomingData: '0 1 1');
-    bluetoothData.parseIncomingData();
-
-    if (bluetoothData.filling) {
-      setState(() {
-        fillingstr = 'Not empty';
-      });
-    }
-    if (bluetoothData.updown) {
-      setState(() {
-        updownstr = 'Up';
-      });
-    }
-    if (bluetoothData.drinkstate) {
-      setState(() {
-        drinkstr = 'Drinking';
-      });
-    }
-
-    flutterLocalNotificationsPlugin.show(
-        0,
-        'Testing $fillingstr',
-        "How you doin",
-        NotificationDetails(
-            android: AndroidNotificationDetails(channel.id, channel.name,
-                channelDescription: channel.description,
-                importance: Importance.high,
-                color: Colors.blue,
-                playSound: true,
-                icon: '@mipmap/ic_launcher')));
   }
 }

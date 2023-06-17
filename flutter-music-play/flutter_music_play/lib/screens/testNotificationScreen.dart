@@ -29,6 +29,7 @@ class _TestNotificationScreenState extends State<TestNotificationScreen> {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? androidNotification = message.notification?.android;
+      print("Notification arrived");
       if (notification != null && androidNotification != null) {
         flutterLocalNotificationsPlugin.show(
             notification.hashCode,

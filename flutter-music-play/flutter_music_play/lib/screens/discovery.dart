@@ -9,8 +9,10 @@ import 'homepage.dart';
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
   final bool start;
+  String song_path;
+  String duration_value;
 
-  const DiscoveryPage({this.start = true});
+  DiscoveryPage({this.start = true,required this.song_path,required this.duration_value});
 
   @override
   _DiscoveryPage createState() => new _DiscoveryPage();
@@ -113,13 +115,19 @@ class _DiscoveryPage extends State<DiscoveryPage> {
                 bool bonded = false;
                 bool continueChat = false;
                 if (device.isBonded) {
-                  print('Unbonding from ${device.address}...');
+                  /*print('Unbonding from ${device.address}...');
                   await FlutterBluetoothSerial.instance
                       .removeDeviceBondWithAddress(address);
                   print('Unbonding from ${device.address} has succed');
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Unbond successful')),
-                  );  
+                  );*/
+                  bonded=true;
+                  continueChat=true;  
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Already bonded')),
+                    );                   
+                    Future.delayed(Duration(seconds: 3));
                 }
                 else {
                   print('Bonding with ${device.address}...');
@@ -181,7 +189,7 @@ class _DiscoveryPage extends State<DiscoveryPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
-          return MyHomePage(server: server);
+          return MyHomePage(server: server,song_path: widget.song_path,duration_value: widget.duration_value,);
         },
       ),
     );

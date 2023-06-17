@@ -13,6 +13,7 @@ import 'package:flutter_music_play/screens/testNotificationScreen.dart';
 import 'package:flutter_music_play/util/back_services.dart';
 import 'package:flutter_music_play/util/btdata.dart';
 import 'package:flutter_music_play/util/model/hearthWidget.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'util/song.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -136,6 +137,7 @@ void requestAdvertisePermission() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
   final notificationDenied = await Permission.notification.isDenied;
   if(notificationDenied) {
     await Permission.notification.request();
@@ -171,7 +173,7 @@ Future<void> main() async {
     await Permission.bluetoothAdvertise.request();
   }
 
-  /*
+  
   await initializeService();
   final service = FlutterBackgroundService();
   bool isRunning = await service.isRunning();
@@ -179,7 +181,7 @@ Future<void> main() async {
   if(isRunning) {
     service.startService();    
   }
-  */
+  
   //init firebase
   await Firebase.initializeApp();
 
@@ -248,7 +250,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           ElevatedButton(onPressed: () {gotoBluetoothSettings(context);} , child: const Text("See Bluetooth Settings to start Drink Coffee")),
           const SizedBox(height: 10,),
-          ElevatedButton(onPressed:() {gotoDebug(context);}, child: const Text("Test Notification")),
+          //ElevatedButton(onPressed:() {gotoDebug(context);}, child: const Text("Test Notification")),
         ]
     ))));
   }

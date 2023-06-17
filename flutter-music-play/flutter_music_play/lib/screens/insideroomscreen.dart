@@ -5,35 +5,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../main.dart';
 import '../util/constants.dart';
 import '../util/model/roomuser.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
-
-class MyScreenObserver extends WidgetsBindingObserver {
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // The app is now in the foreground (screen is visible).
-      // Add your logic here.
-    } else if (state == AppLifecycleState.inactive) {
-      // The app is still active but not in the foreground (e.g., a phone call).
-      // Add your logic here.
-    } else if (state == AppLifecycleState.paused) {
-      // The app is in the background (screen is not visible).
-      // Add your logic here.
-    } else if (state == AppLifecycleState.detached) {
-      // The app is being terminated by the system.
-      // Add your logic here.
-    }
-  }
-}
-
 
 
 
@@ -48,8 +32,9 @@ class RoomScreen extends StatefulWidget {
   final String roomName;
   final String userId;
   BluetoothDevice server;
-
-  RoomScreen({required this.roomName, required this.userId,required this.server});
+  String song_path;
+  String duration_value;
+  RoomScreen({required this.roomName, required this.userId,required this.server,required this.song_path,required this.duration_value});
 
   @override
   _RoomScreenState createState() => _RoomScreenState();
@@ -76,8 +61,10 @@ class _RoomScreenState extends State<RoomScreen> {
   bool isDisconnecting = false;
 
   String _lastMessage=' ';
-  int receivedDistance=-1;
+  int receivedDistance=0;
+  String cupStatus = "DOWN";
   bool firstMessageSent=false;
+  final player = AudioPlayer();
 
 
 
@@ -85,6 +72,50 @@ class _RoomScreenState extends State<RoomScreen> {
   @override
   void initState() {
     super.initState();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? androidNotification = message.notification?.android;
+      print("Notification arrived!");
+      playSongWithDuration(widget.song_path, Duration(seconds: int.parse(widget.duration_value)));
+
+
+      if (notification != null && androidNotification != null) {
+        flutterLocalNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+                android: AndroidNotificationDetails(channel.id, channel.name,
+                    channelDescription: channel.description,
+                    color: Colors.blue,
+                    playSound: true,
+                    icon: '@mipmap/ic_launcher')));
+      }
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      Logger.log(Logger.logLevel,'A new onMessageOpenedApp event was published');
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? androidNotification = message.notification?.android;
+      if (notification != null && androidNotification != null) {
+        showDialog(
+            context: context,
+            builder: (_) {
+              return AlertDialog(
+                title: Text(notification.title ?? 'Null'),
+                content: SingleChildScrollView(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Text(notification.body ?? 'Null')]),
+                ),
+              );
+            });
+      }
+    }); 
+
+
+
+
     BluetoothConnection.toAddress(widget.server.address).then((_connection) {
       print('Connected to the device');
       connection = _connection;
@@ -121,16 +152,18 @@ class _RoomScreenState extends State<RoomScreen> {
 
       // Listen for changes to the room data
       roomSubscription = roomRef.onValue.listen((event) async {
-        final roomData = event.snapshot.value as Map<dynamic, dynamic>;
-        print("Room data has been converted to map");
-        final usersData = roomData['users'] as Map<dynamic,dynamic>;
-        final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
+        if(this.mounted) {
+          final roomData = event.snapshot.value as Map<dynamic, dynamic>;
+          print("Room data has been converted to map");
+          final usersData = roomData['users'] as Map<dynamic,dynamic>;
+          final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
 
-        if (users.length==2) {
-          // Room is full, lock the room
-          roomRef.update({'isLocked': true});
+          if (users.length==2) {
+            // Room is full, lock the room
+            roomRef.update({'isLocked': true});
+          }
         }
-      
+
       });
     }
     catch(ex) {
@@ -228,7 +261,7 @@ class _RoomScreenState extends State<RoomScreen> {
                     const SizedBox(height: 16),
                     Text('You are ${widget.userId}'), // display the current user's ID
                     const SizedBox(height: 16),
-                    Text('Incoming data: {$receivedDistance}'),
+                    Text('Your cup is: $cupStatus'),
                     const SizedBox(height: 3,),
                     Expanded(
                       child: ListView.builder(
@@ -342,6 +375,7 @@ class _RoomScreenState extends State<RoomScreen> {
             makeCupIsUpStateOn();
           }
           receivedDistance=1;
+          cupStatus="UP";
           
         }
         else if (_lastMessage.trim()=="DOWN" && receivedDistance==1) {
@@ -350,6 +384,7 @@ class _RoomScreenState extends State<RoomScreen> {
             
           }
           receivedDistance=0;
+           cupStatus="DOWN";
           
         }
     }
@@ -423,9 +458,14 @@ class _RoomScreenState extends State<RoomScreen> {
       String newValue = "Yes";
       CupIsUp.set(newValue);
 
+      
       //send notification here
-      sendNotification();
-
+      try {
+        sendNotification();
+      }
+      catch(ex) {
+        print(ex.toString());
+      }
     }
     catch(ex) {
       print(ex);
@@ -464,9 +504,9 @@ class _RoomScreenState extends State<RoomScreen> {
           var body = json.encode({
             "to" : oppositeToken,
             "notification" : {
-              "body" : "Body",
-              "title" : "title",
-              "subtitle" : "subtitle"        
+              "body" : "Your valentine $oppositeName is drinking, would you?",
+              "title" : "Valentine's Cup",
+              "subtitle" : "Cup is moved"        
             }
           });
           var header = {
@@ -491,5 +531,21 @@ class _RoomScreenState extends State<RoomScreen> {
     }
 
 
+  }
+  void onStop() async {
+    await player.pause();
+  }
+  void playSongWithDuration(String path,Duration duration) async {
+    /*if (!File(path).existsSync()) {
+      print("Path does exists\n");
+      return;
+    }*/
+    ByteData bytes = await rootBundle.load(path);
+    Uint8List soundbytes =
+        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+
+    await player.playBytes(soundbytes);
+    await Future.delayed(duration);
+    onStop();    
   }
 }

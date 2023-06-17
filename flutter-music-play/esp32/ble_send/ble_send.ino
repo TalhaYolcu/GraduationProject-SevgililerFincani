@@ -74,7 +74,6 @@ void loop() {
           halt=1;          
         }    
         if(SerialBT.connected()) {
-
         } 
         else {
           SerialBT.println("SerialBT not available");
@@ -87,8 +86,5 @@ void loop() {
       Serial.println("Halted");
     }
   }
-
-
-
   delay(100);
 }
