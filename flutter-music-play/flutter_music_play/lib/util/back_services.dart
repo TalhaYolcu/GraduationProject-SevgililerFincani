@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
+import 'package:flutter_music_play/util/constants.dart';
 
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
@@ -21,6 +25,7 @@ void onStart(ServiceInstance service) {
     });
     service.on('setAsBackground').listen((event) {
       service.setAsBackgroundService();
+
     });
   }
   service.on('stopService').listen((event) {
@@ -28,12 +33,11 @@ void onStart(ServiceInstance service) {
   });
   Timer.periodic(const Duration(seconds: 1), (timer) async {
     if(service is AndroidServiceInstance) {
-      if(await service.isForegroundService()) {
-        service.setForegroundNotificationInfo(title: "MyForeground", content: "This is notification");
-      }
+
     }
     //perform some operation on background which is not noticeable from user
     print("background service running");
+
     service.invoke('update');
    });
 

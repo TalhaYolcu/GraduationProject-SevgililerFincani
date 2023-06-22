@@ -11,6 +11,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../main.dart';
@@ -65,20 +66,29 @@ class _RoomScreenState extends State<RoomScreen> {
   String cupStatus = "DOWN";
   bool firstMessageSent=false;
   final player = AudioPlayer();
+  //final service = FlutterBackgroundService();
 
-
-
+  Future<void> onBackgroundMessage(RemoteMessage message) async {
+      playSongWithDuration(widget.song_path, Duration(seconds: int.parse(widget.duration_value)));
+  }
 
   @override
   void initState() {
     super.initState();
+
+
+
+
+
+
+
+    FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? androidNotification = message.notification?.android;
       print("Notification arrived!");
       playSongWithDuration(widget.song_path, Duration(seconds: int.parse(widget.duration_value)));
-
 
       if (notification != null && androidNotification != null) {
         flutterLocalNotificationsPlugin.show(
@@ -93,10 +103,13 @@ class _RoomScreenState extends State<RoomScreen> {
                     icon: '@mipmap/ic_launcher')));
       }
     });
+
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       Logger.log(Logger.logLevel,'A new onMessageOpenedApp event was published');
       RemoteNotification? notification = message.notification;
       AndroidNotification? androidNotification = message.notification?.android;
+      playSongWithDuration(widget.song_path, Duration(seconds: int.parse(widget.duration_value)));
+
       if (notification != null && androidNotification != null) {
         showDialog(
             context: context,
@@ -229,77 +242,115 @@ class _RoomScreenState extends State<RoomScreen> {
 
     return WillPopScope(
       onWillPop: _onWillPop,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.roomName),
-        ),
-        body: StreamBuilder(
-          stream: roomRef.child('users').onValue,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              
-              final usersData = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
-    
-              final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
-    
-              if (users.isEmpty) {
-                // Room is empty, remove the room
-                roomRef.remove();
-                Navigator.pop(context);
-                return SizedBox.shrink();
-              }
-              else {
-                return Column(
-                  children: [
-                    SizedBox(height: 20,),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        ElevatedButton(onPressed: seeRoomPassword, child: const Text("See Room Password")),
-                      ],
-                    ),                  
-                    const SizedBox(height: 16),
-                    Text('You are ${widget.userId}'), // display the current user's ID
-                    const SizedBox(height: 16),
-                    Text('Your cup is: $cupStatus'),
-                    const SizedBox(height: 3,),
-                    Expanded(
-                      child: ListView.builder(
-                      itemCount: users.length,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Text("User "+users[index].name+" 's info:"),
-                          subtitle: Column(
+      child: Container(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(widget.roomName),
+          ),
+          body: Container(
+            child: StreamBuilder(
+              stream: roomRef.child('users').onValue,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  
+                  try {
+                  final usersData = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
+            
+                  final users = usersData.entries.map((entry) => RoomUser.fromMap(entry.value)).toList();
+            
+                  if (users.isEmpty) {
+                    // Room is empty, remove the room
+                    roomSubscription.cancel();
+                    roomRef.remove();
+                    Navigator.pop(context);
+                    return SizedBox.shrink();
+                  }
+                  else {
+                    try {
+                      return Column(
+                        children: [
+                          SizedBox(height: 20,),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 2,),
-                              Text("Joined at:${users[index].joinedAt}"),
-                              const SizedBox(height: 3,),
-                              Text("Filling:${users[index].filling}"),
-                              const SizedBox(height: 3,),
-                              Text("Cup is up:${users[index].cup_is_up}"),
-                              const SizedBox(height: 3,),
-                              Text("Drinking:${users[index].drinking}"),
-                              const SizedBox(height: 3,),
-    
+                              ElevatedButton(onPressed: seeRoomPassword, child: const Text("See Room Password")),
                             ],
+                          ),                  
+                          const SizedBox(height: 16),
+                          Text('You are ${widget.userId}'), // display the current user's ID
+                          const SizedBox(height: 16),
+                          Text('Your cup is: $cupStatus'),
+                          const SizedBox(height: 3,),
+                          Container(
+                            child: Expanded(
+                              child: ListView.builder(
+                              itemCount: users.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  title: Text("User "+users[index].name+" 's info:"),
+                                  subtitle: Column(
+                                    children: [
+                                      const SizedBox(height: 2,),
+                                      Text("Joined at:${users[index].joinedAt}"),
+                                      const SizedBox(height: 3,),
+                                      Text("Filling:${users[index].filling}"),
+                                      const SizedBox(height: 3,),
+                                      Text("Cup is up:${users[index].cup_is_up}"),
+                                      const SizedBox(height: 3,),
+                                      Text("Drinking:${users[index].drinking}"),
+                                      const SizedBox(height: 3,),
+                                            
+                                    ],
+                                  ),
+                                  
+                                );
+                              },
+                            ) 
+                            ),
                           ),
-                          
-                        );
-                      },
-                    ) 
-                    ),
-    
-                  ],
-                ) ;
-              }
-              
-              //return SizedBox(height: 5,);
-            } else {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
+                  
+                        ],
+                      ) ;
+                      }
+                      catch(ex) {
+                        print("Error on catch"+ex.toString());
+                      }
+                      return Column(
+                        children: [
+                          SizedBox(height: 20,),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              ElevatedButton(onPressed: seeRoomPassword, child: const Text("See Room Password")),
+                            ],
+                          )
+                        ]);
+                        
+                    }
+                  }
+                  catch(ex) {
+                    print(ex.toString());
+                    
+                  }
+                      return Column(
+                        children: [
+                          SizedBox(height: 20,),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              ElevatedButton(onPressed: seeRoomPassword, child: const Text("See Room Password")),
+                            ],
+                          )
+                        ]);
+                }
+                else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -410,7 +461,7 @@ class _RoomScreenState extends State<RoomScreen> {
         content:  SafeArea(
           child: Row(
             children: [
-              Text('Room Password is : $roomPassword',style: const TextStyle(fontSize: 15),),
+              Text('Room Password is : $roomPassword',style: const TextStyle(fontSize: 14),),
               IconButton(icon: const Icon(Icons.copy),onPressed:() {
                 Clipboard.setData(ClipboardData(text:roomPassword));
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -543,7 +594,6 @@ class _RoomScreenState extends State<RoomScreen> {
     ByteData bytes = await rootBundle.load(path);
     Uint8List soundbytes =
         bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
-
     await player.playBytes(soundbytes);
     await Future.delayed(duration);
     onStop();    

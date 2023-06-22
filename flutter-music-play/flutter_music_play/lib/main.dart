@@ -137,51 +137,72 @@ void requestAdvertisePermission() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
+  );
 
-  final notificationDenied = await Permission.notification.isDenied;
-  if(notificationDenied) {
-    await Permission.notification.request();
+  try {
+    final notificationDenied = await Permission.notification.isGranted;
+    if(notificationDenied!=true) {
+      await Permission.notification.request();
+    }
+    
+    final externalStorageDenied = await Permission.manageExternalStorage.isGranted;
+    if (externalStorageDenied!=true) {
+      await Permission.manageExternalStorage.request();
+    }
+
+    final locationDenied = await Permission.locationAlways.isGranted;
+    if (locationDenied!=true) {
+      await Permission.locationAlways.request();
+    }
+
+    final bluetoothScanDenied = await Permission.bluetoothScan.isGranted;
+    if (bluetoothScanDenied!=true) {
+      await Permission.bluetoothScan.request();
+    }
+
+    final bluetoothDenied = await Permission.bluetooth.isGranted;
+    if (bluetoothDenied!=true) {
+      await Permission.bluetooth.request();
+    }
+
+    final bluetoothConnectDenied = await Permission.bluetoothConnect.isGranted;
+    if (bluetoothConnectDenied!=true) {
+      await Permission.bluetoothConnect.request();
+    }
+
+    final bluetoothAdvertiseDenied = await Permission.bluetoothAdvertise.isGranted;
+    if (bluetoothAdvertiseDenied!=true) {
+      await Permission.bluetoothAdvertise.request();
+    }
+    if(await Permission.audio.isGranted!=true) {
+      await Permission.audio.request();
+    }
+    if(await Permission.notification.isGranted!=true) {
+      await Permission.notification.request();
+    
+    }
   }
+  catch(ex) {
+    print(ex.toString());
+  }
+
+
   
-  final externalStorageDenied = await Permission.manageExternalStorage.isDenied;
-  if (externalStorageDenied) {
-    await Permission.manageExternalStorage.request();
-  }
-
-  final locationDenied = await Permission.locationAlways.isDenied;
-  if (locationDenied) {
-    await Permission.locationAlways.request();
-  }
-
-  final bluetoothScanDenied = await Permission.bluetoothScan.isDenied;
-  if (bluetoothScanDenied) {
-    await Permission.bluetoothScan.request();
-  }
-
-  final bluetoothDenied = await Permission.bluetooth.isDenied;
-  if (bluetoothDenied) {
-    await Permission.bluetooth.request();
-  }
-
-  final bluetoothConnectDenied = await Permission.bluetoothConnect.isDenied;
-  if (bluetoothConnectDenied) {
-    await Permission.bluetoothConnect.request();
-  }
-
-  final bluetoothAdvertiseDenied = await Permission.bluetoothAdvertise.isDenied;
-  if (bluetoothAdvertiseDenied) {
-    await Permission.bluetoothAdvertise.request();
-  }
-
   
-  await initializeService();
+
+ 
+  /*await initializeService();
   final service = FlutterBackgroundService();
   bool isRunning = await service.isRunning();
 
   if(isRunning) {
     service.startService();    
   }
-  
+  */
   //init firebase
   await Firebase.initializeApp();
 
